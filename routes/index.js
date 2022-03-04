@@ -430,12 +430,59 @@ router.get('/complaintlist/:id', async (req, res, next) => {
 
   try {
 
-    const result = await complaintschema.find()
+    const result = await complaintschema.find({ status: "pending" }).sort({ createdAt: -1 })
     if (result)
       res.json({
         message: "OK",
         value: result
       })
+  }
+
+  catch (error) {
+    res.send(error);
+  }
+
+});
+
+
+//update complaint status
+router.put('/complaintlist/:id', async (req, res, next) => {
+
+  try {
+
+    const result = await complaintschema.findOneAndUpdate({ _id: req.body.id }, { status: "resolved" })
+    console.log(result);
+    if (result) {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "dkmailpratice@gmail.com", // generated ethereal user
+          pass: "karthik!123",
+        }
+      });
+
+      const mailOptions = {
+        from: 'dkpraticemail@gmail.com',  // sender address
+        to: req.body.email,   // list of receivers
+        subject: `Complaint Resolved`,
+        text: `Your Complaint has been resolved.
+      
+      Your ticket is ${req.body.id}.
+      
+      Thank you..Hope ALL safe`,
+      };
+      transporter.sendMail(mailOptions, function (err, info) {
+        if (err)
+          console.log(err)
+        else {
+          console.log("Info :");
+          console.log(info);
+          res.json({
+            message: "OK"
+          })
+        }
+      });
+    }
   }
 
   catch (error) {
